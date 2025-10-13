@@ -1,5 +1,5 @@
 name: modules
-title: Default Title
+title: Customizing RHCOS with CoreOS Layering to Add the rsyslog Package
 version: master
 nav:
   - modules/ROOT/nav.adoc
