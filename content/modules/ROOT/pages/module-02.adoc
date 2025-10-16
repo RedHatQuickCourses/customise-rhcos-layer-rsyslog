@@ -1,138 +1,80 @@
-= Managing an Application from GitHub
+= Apply the Custom Image to the Cluster
 
-In the first half of this workshop, we packaged an application into this portable container format manually using rpms.
-In the second half, we will consider that you may want to manage software from GitHub or some kind of software versioning application.
-Rather than installing rpms, we have individual software files and pull them out of that version control into a group of systems.
+[#step3]
+== Step 3: Apply the Custom Image to the Cluster
 
-== Install RHEL 8 UBI
+With the custom image available in your registry, you can now create a `MachineConfig` to apply it to your OpenShift nodes. This example targets the `master` nodes.
 
-In this lab, we will be using a different Red Hat Enterprise Linux version in my container. 
+This `MachineConfig` does two things:
+1.  It points the nodes to the new custom `osImageURL`.
+2.  It creates a configuration file at `/etc/tmpfiles.d/rsyslog.conf`. This file instructs `systemd-tmpfiles` to create the `/var/lib/rsyslog` directory on boot, which is required for `rsyslog` to function correctly.
 
-. Verify the host system release 
-
-+
-[source,bash]
-----
-cat /etc/redhat-release
-----
-+ 
-NOTE: The `bastion` system is Red Hat Enterprise Linux 9, and when you built the previous container, you used the UBI9 image. This means both the image and the container were built off the same Red Hat Enterprise Linux packages. 
-
-. As we did previously in this lab, Use `buildah from` to pull down the Red Hat Enterprise Linux 8 UBI.
-
-+
-[source,bash]
-----
-buildah from registry.access.redhat.com/ubi8/ubi
-----
-
-NOTE: Because you already pulled one image named `ubi-working-container` this one is called `ubi-working-container-1`. 
-
-[#prerequisites]
-== Install Prerequisites
-
-Now that you have a working container, you will use the same process as before installing all the prerequisites, changing config files, and manipulating the contents of this container to be in the desired state.
-
-The software you will install is a JavaScript-based game that runs on a web browser. As before in the lab, use dnf to install software inside the container. 
-
-. Use `buildah run` and install Apache (`httpd`) into the `ubi-working-container-1` container. 
-+
-[source,bash]
-----
-buildah run ubi-working-container-1 -- dnf -y install httpd
-----
-
-== Enable Service
-
-The next thing to do is to use a systemctl to enable the service. The ubi-init provides full systemd service to the container.
-This will start up any of the services that are enabled. 
-
-. Enable the `httpd` service using `buildah run`
-
-+
-[source,bash]
-----
-buildah run ubi-working-container-1 -- systemctl enable httpd
-----
-
-NOTE: The UBI standard image doesn't have systemd installed on it by default. The `ubi-init` container image does include systemd. Plan accordingly to which image you use to build applications.  
-
-== Explore Source Materials
-
-A GitHub repository has already been synchronized to `/home/devops/clumsy-bird/` This repository contains the configurations for your application.
-
-. Verify the repository is cloned inside the `/home/devops/` directory
-+
-[source,bash]
-----
-cd /home/devops/
-----
-
-+
-[source,bash]
-----
-git clone https://github.com/ellisonleao/clumsy-bird
-----
-+
-NOTE: The output states that the software has already been checked out. 
-+
-. Explore the JavaScript contents, index files, and everything else that we need for this web-based JavaScript software.
+. Create the MachineConfig manifest.
 +
 [source,bash,role=execute]
 ----
-ls clumsy-bird
+CUSTOM_IMAGE=$(podman images --filter "reference=quay.io/wangzheng422/qimgs:rhcos-4.18-rsyslog*" --format "{{.Repository}}:{{.Tag}}")
+tee machine-config-rsyslog.yaml << EOF
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: master
+  name: 99-master-layered-rhcos
+spec:
+  config:
+    ignition:
+      version: 3.4.0
+    storage:
+      files:
+        # This section defines a file to be created on the node.
+        # It ensures the rsyslog working directory exists.
+        - path: /etc/tmpfiles.d/rsyslog.conf
+          mode: 0644
+          overwrite: true
+          contents:
+            # The content is base64 encoded.
+            # The original text is: "d /var/lib/rsyslog 0755 root root -"
+            # This line instructs systemd-tmpfiles to create the directory.
+            source: "data:text/plain;charset=utf-8;base64,ZCAvdmFyL2xpYi9yc3lzbG9nIDA3NTUgcm9vdCByb290IC0K"
+        - path: /etc/logrotate.d/rsyslog
+          mode: 0644
+          overwrite: true
+          contents:
+            # content of this file
+            # /var/log/cron
+            # /var/log/maillog
+            # /var/log/messages
+            # /var/log/secure
+            # /var/log/spooler
+            # {
+            #     missingok
+            #     sharedscripts
+            #     postrotate
+            #         /usr/bin/systemctl -s HUP kill rsyslog.service >/dev/null 2>&1 || true
+            #     endscript
+            # }
+            source: "data:text/plain;charset=utf-8;base64,L3Zhci9sb2cvY3JvbgovdmFyL2xvZy9tYWlsbG9nCi92YXIvbG9nL21lc3NhZ2VzCi92YXIvbG9nL3NlY3VyZQovdmFyL2xvZy9zcG9vbGVyCnsKICAgIG1pc3NpbmdvawogICAgc2hhcmVkc2NyaXB0cwogICAgcG9zdHJvdGF0ZQogICAgICAgIC91c3IvYmluL3N5c3RlbWN0bCAtcyBIVVAga2lsbCByc3lzbG9nLnNlcnZpY2UgPi9kZXYvbnVsbCAyPiYxIHx8IHRydWUKICAgIGVuZHNjcmlwdAp9Cg=="
+        - path: /etc/rsyslog.d/remote.conf
+          mode: 0644
+          overwrite: true
+          contents:
+            # content of this file
+            # if \$programname == 'crio' or \$programname == 'kubenswrapper' then {
+            #     stop
+            # }
+            source: "data:text/plain;charset=utf-8;base64,aWYgJHByb2dyYW1uYW1lID09ICdjcmlvJyBvciAkcHJvZ3JhbW5hbWUgPT0gJ2t1YmVuc3dyYXBwZXInIHRoZW4gewogICAgc3RvcAp9Cg=="
+  # Set the osImageURL to your custom-built image
+  osImageURL: \${CUSTOM_IMAGE}
+EOF
 ----
 
-== Add Source Materials to Container
-
-. Now that you have verified the source materials exist, you will put the software inside of my container image using the `buildah copy` command.
+. Apply the MachineConfig to the cluster.
 +
-[source,bash]
+[source,bash,role=execute]
 ----
-buildah copy ubi-working-container-1 clumsy-bird /var/www/html
-----
-
-[#container]
-== Enable Container in Background
-
-In the previous section of this lab, you ran the game natively through interactive mode. Because you are now building a web application you will need to run the container in the background and access it through a web address. 
-
-. Execute `buildah config` to specify a port and initialize the container. 
-
-+
-[source,bash]
-----
-buildah config --port 80 --cmd "/usr/sbin/init" ubi-working-container-1
+oc apply -f machine-config-rsyslog.yaml
 ----
 
-NOTE: The command makes a configuration change to this container. I'm configuring this container to accept connections to its port 80. When the container starts up, it should run the init command, which, in this case, is going to be the Apache daemon right from earlier when I enabled it.
-
-== Commit Container and Deploy
-
-. Now that we have a container in a working configured state, it is time to make that permanent by committing it to a container image called `clumsy-bird`
-+
-[source,bash]
-----
-buildah commit ubi-working-container-1 clumsy-bird
-----
-
-. Verify that the image was created with `podman`
-+
-[source,bash]
-----
-podman images
-----
-+
-. Run the container Now it's time to run the container. 
-+
-[source,bash]
-----
-podman run -d -p 8500:80 clumsy-bird
-----
-
-== Verify Application
-
-Verify that the application is running by navigating to
-
-http://bastion.{guid}.example.opentlc.com:8500
-
+After applying the `MachineConfig`, the Machine Config Operator (MCO) will detect the change and begin a rolling update of the `master` nodes to apply the new configuration and boot from the custom OS image.
