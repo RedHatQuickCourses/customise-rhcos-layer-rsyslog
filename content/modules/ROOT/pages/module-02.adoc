@@ -13,9 +13,9 @@ This `MachineConfig` does two things:
 +
 [source,bash,role=execute]
 ----
-# an example of custom image:
-# CUSTOM_IMAGE="quay.io/wangzheng422/qimgs:rhcos-4.18-rsyslog-2025.09.03-v02"
-CUSTOM_IMAGE="<image you just pushed>"
+# An example of a custom image.
+# Use it if you cannot finish the last part.
+# CUSTOM_IMAGE="quay.io/wangzheng422/qimgs:rhcos-4.18-rsyslog-2025.10.17-v01"
 
 tee machine-config-rsyslog.yaml << EOF
 ---

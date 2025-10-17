@@ -32,9 +32,9 @@ Create a working directory and download the necessary RPM packages and their dep
 +
 [source,bash,role=execute]
 ----
-mkdir -p /data/rhcos-build
+mkdir -p ~/rhcos-build
 
-cd /data/rhcos-build
+cd ~/rhcos-build
 
 dnf download --resolve --destdir=. rsyslog libestr libfastjson logrotate plymouth plymouth-core-libs plymouth-scripts
 ----
@@ -49,7 +49,7 @@ Create a `Dockerfile` (or `Containerfile`) to define the build process for your 
 ----
 RHCOS_IMAGE=$(oc adm release info --image-for rhel-coreos)
 
-tee /data/rhcos-build/rhcos.dockerfile << EOF
+tee ~/rhcos-build/rhcos.dockerfile << EOF
 FROM ${RHCOS_IMAGE}
 
 # Install the RPMs using dnf and commit the layer to ostree
@@ -76,12 +76,21 @@ Now, build the image using `podman` and push it to your container registry. Make
 # an example of custom image:
 # CUSTOM_IMAGE="quay.io/wangzheng422/qimgs:rhcos-4.18-rsyslog-$(date +%Y.%m.%d)-v01"
 CUSTOM_IMAGE="<your custom image tag>"
+----
 
+. then build and push the image.
++
+[source,bash,role=execute]
+----
 podman build --security-opt label=disable \
---authfile /path/to/pull-secret.json \
+--authfile ~/pull-secret.json \
 -t ${CUSTOM_IMAGE} \
--f /data/rhcos-build/rhcos.dockerfile \
-/data/rhcos-build
+-f ~/rhcos-build/rhcos.dockerfile \
+~/rhcos-build
+
+# login to your registry
+# an example of login command
+# podman login quay.io -u <your username> -p <your password>
 
 podman push ${CUSTOM_IMAGE}
 ----

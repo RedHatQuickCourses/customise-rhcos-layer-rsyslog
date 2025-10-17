@@ -5,18 +5,18 @@
 
 Once the nodes have been updated, you can verify that `rsyslog` is running and generating logs.
 
-. *Check Node Status:* Monitor the nodes to ensure they reboot successfully and return to a `Ready` state.
+. *Check Node Status:* Monitor the nodes to ensure they reboot successfully and return to a `Ready` state. Because this is a single-node OpenShift demo environment, the web console will be unavailable for a while.
 +
 [source,bash,role=execute]
 ----
 oc get nodes
 ----
 
-. *Inspect a Node:* SSH into one of the updated master nodes.
+. *Inspect a Node:* SSH into the node. In a single-node OpenShift cluster, you can get the node name and debug it with the following command.
 +
 [source,bash,role=execute]
 ----
-oc debug node/<node-name>
+oc debug node/$(oc get nodes -o jsonpath='{.items[0].metadata.name}')
 ----
 
 . *Check for Log Files:* List the contents of `/var/log`. With `rsyslog` running, you should see classic log files like `messages`, `secure`, and `boot.log`.
