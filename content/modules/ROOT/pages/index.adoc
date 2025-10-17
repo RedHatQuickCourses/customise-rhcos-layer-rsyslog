@@ -1,43 +1,19 @@
-= {lab_name}
+= Customizing RHCOS with CoreOS Layering to Add the `rsyslog` Package
 
-The `lab_name` var, known as an asciidoc attribute, above was set in `./content/antora.yml` and can be used to set the lab_name or title of your content.
-You are both free to change its value and if you prefer to use a different var name, you can change the value of `lab_name`, for example to `title` in `./content/antora.yml` and then reference it in your content as `\{title}`. +
+== Introduction
 
-image::rhel-logo-black.jpg[rhel-logo-black,55%,55%]
+Red Hat Enterprise Linux CoreOS (RHCOS) is the immutable, container-optimized operating system that powers OpenShift Container Platform nodes. While its immutability provides stability and security, there are scenarios where you might need to add additional packages or custom configurations. OpenShift's **CoreOS Layering** feature allows you to extend the base RHCOS image by adding RPM packages, creating a customized OS layer.
 
-== Variables
+This guide provides a step-by-step walkthrough of how to use CoreOS layering to build a custom RHCOS image that includes the `rsyslog` package. This is useful for environments that require traditional log forwarding mechanisms or need to integrate with existing logging infrastructure that relies on syslog. We will also install `plymouth` to ensure boot-time logs are captured correctly.
 
-Other vars can also be set there, such as `ssh_user` and `ssh_password`, and referenced inline in the lab content by using the `\{foo}` syntax.
+For more details, refer to the https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/machine_configuration/mco-coreos-layering#mco-coreos-layering[official OpenShift documentation on CoreOS layering].
 
-This is another var, or asciidoc attribute, from `./content/antora.yml` {my_var}
+== Prerequisites
 
-== Writing your lab
-
-Whatever type of content you are writing we'll refer to your *content* as "your lab" in this document.
-
-=== Lab structure
-
-Wether you are writing a lab
-
-* First, we will build a monolithic application already compiled as RPM packages and put it into a container. This will allow us to deploy the application, copy it between machines, and update it separately from the operating system. This process affords us a portable and easily maintained component instead of tightly coupling the application with your operating system maintenance.
-
-* In closing we will build a second container on a different operating system version that makes an application not packaged into RPMs. This will be similar to a web application deployment, positioning the correct files at the right locations. To do this, we will pull a project from GitHub and position the component files within our container image. The purpose of this is to achieve a portable application container that can deploy on several different versions of Red Hat Enterprise Linux. This also provides the benefit of decoupling your application maintenance, which would all happen by building new containers versus operating system maintenance. The container is no longer reliant on the operating system installed on the machine where the application is deployed.
-
-. Now let's examine this cluster a bit more by describing the cluster (the `$GUID` environment variable is already set for you so you can immediately describe your individual cluster):
-+
-[source,sh,role=execute]
-----
-podman ps
-----
-+
-.Sample Output
-[source,texinfo,subs="attributes"]
-----
-CONTAINER ID  IMAGE                        COMMAND           CREATED      STATUS      PORTS                 NAMES
-2dcfee9e50c4  docker.io/library/httpd:2.4  httpd-foreground  3 hours ago  Up 3 hours  0.0.0.0:8080->80/tcp  showroom-httpd
-----
-
-=== Lab Access
-
-The terminal window to your right is *already* logged into the lab environment as the `{ssh_user}` user via `ssh`. 
-All steps of this lab are to be completed as the `{ssh_user}` user.
+Before you begin, ensure you have the following:
+- A running OpenShift Container Platform 4.18 cluster.
+- Administrative access to the cluster with the `oc` CLI tool.
+- A Red Hat Enterprise Linux (RHEL) 9 host to build the custom image. The RHEL version must match the RHCOS version.
+- `Podman` installed on the RHEL build host.
+- A container registry (like Quay.io, Harbor, or Docker Hub) to store the custom image.
+- A pull secret for your container registry.
