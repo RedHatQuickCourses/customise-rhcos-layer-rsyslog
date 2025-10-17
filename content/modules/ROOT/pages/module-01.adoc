@@ -78,7 +78,7 @@ Now, build the image using `podman` and push it to your container registry. Make
 CUSTOM_IMAGE="<your custom image tag>"
 
 podman build --security-opt label=disable \
---authfile /home/sno/data/pull-secret.json \
+--authfile /path/to/pull-secret.json \
 -t ${CUSTOM_IMAGE} \
 -f /data/rhcos-build/rhcos.dockerfile \
 /data/rhcos-build
