@@ -33,7 +33,9 @@ Create a working directory and download the necessary RPM packages and their dep
 [source,bash,role=execute]
 ----
 mkdir -p /data/rhcos-build
+
 cd /data/rhcos-build
+
 dnf download --resolve --destdir=. rsyslog libestr libfastjson logrotate plymouth plymouth-core-libs plymouth-scripts
 ----
 
@@ -46,19 +48,16 @@ Create a `Dockerfile` (or `Containerfile`) to define the build process for your 
 [source,bash,role=execute]
 ----
 RHCOS_IMAGE=$(oc adm release info --image-for rhel-coreos)
-tee /data/rhcos-build/rhcos.dockerfile << EOF
-FROM \${RHCOS_IMAGE}
 
-# Copy the downloaded RPMs into the container
-COPY *.rpm /root/
+tee /data/rhcos-build/rhcos.dockerfile << EOF
+FROM ${RHCOS_IMAGE}
 
 # Install the RPMs using dnf and commit the layer to ostree
-RUN cd /root && \
-    dnf install --nobest -y ./*.x86_64.rpm && \
-    ostree container commit
-
-# Clean up the RPM files
-RUN rm -f /root/*.rpm
+RUN --mount=type=bind,source=./,target=/wzh/ \
+      cd /wzh && \
+      dnf install --nobest -y ./*.x86_64.rpm && \
+      dnf clean all && \
+      ostree container commit
 
 # Optional: Add custom configurations
 # For example, to add a custom rsyslog configuration file:
@@ -74,7 +73,15 @@ Now, build the image using `podman` and push it to your container registry. Make
 +
 [source,bash,role=execute]
 ----
-CUSTOM_IMAGE="quay.io/wangzheng422/qimgs:rhcos-4.18-rsyslog-$(date +%Y.%m.%d)-v01"
-podman build --authfile /path/to/pull-secret.json -t \${CUSTOM_IMAGE} -f /data/rhcos-build/rhcos.dockerfile /data/rhcos-build
-podman push \${CUSTOM_IMAGE}
+# an example of custom image:
+# CUSTOM_IMAGE="quay.io/wangzheng422/qimgs:rhcos-4.18-rsyslog-$(date +%Y.%m.%d)-v01"
+CUSTOM_IMAGE="<your custom image tag>"
+
+podman build --security-opt label=disable \
+--authfile /home/sno/data/pull-secret.json \
+-t ${CUSTOM_IMAGE} \
+-f /data/rhcos-build/rhcos.dockerfile \
+/data/rhcos-build
+
+podman push ${CUSTOM_IMAGE}
 ----

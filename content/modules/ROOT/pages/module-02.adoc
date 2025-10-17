@@ -13,7 +13,10 @@ This `MachineConfig` does two things:
 +
 [source,bash,role=execute]
 ----
-CUSTOM_IMAGE=$(podman images --filter "reference=quay.io/wangzheng422/qimgs:rhcos-4.18-rsyslog*" --format "{{.Repository}}:{{.Tag}}")
+# an example of custom image:
+# CUSTOM_IMAGE="quay.io/wangzheng422/qimgs:rhcos-4.18-rsyslog-2025.09.03-v02"
+CUSTOM_IMAGE="<image you just pushed>"
+
 tee machine-config-rsyslog.yaml << EOF
 ---
 apiVersion: machineconfiguration.openshift.io/v1
@@ -66,7 +69,7 @@ spec:
             # }
             source: "data:text/plain;charset=utf-8;base64,aWYgJHByb2dyYW1uYW1lID09ICdjcmlvJyBvciAkcHJvZ3JhbW5hbWUgPT0gJ2t1YmVuc3dyYXBwZXInIHRoZW4gewogICAgc3RvcAp9Cg=="
   # Set the osImageURL to your custom-built image
-  osImageURL: \${CUSTOM_IMAGE}
+  osImageURL: ${CUSTOM_IMAGE}
 EOF
 ----
 
