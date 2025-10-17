@@ -1,6 +1,6 @@
 ---
 site:
-  title: Showroom Template Demo
+  title: Customizing RHCOS with CoreOS Layering to Add the `rsyslog` Package
   url: https://redhat-scholars.github.io/course-template
   start_page: modules::index.adoc
 
