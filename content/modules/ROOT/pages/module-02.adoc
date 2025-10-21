@@ -3,9 +3,10 @@
 [#step3]
 == Step 3: Apply the Custom Image to the Cluster
 
-With the custom image available in your registry, you can now create a `MachineConfig` to apply it to your OpenShift nodes. This example targets the `master` nodes.
+With the custom image available in your registry, you can now create a `MachineConfig` to apply it to your OpenShift nodes. This example targets the `master` nodes; for a normal environment, it should target the `worker` nodes.
 
 This `MachineConfig` does two things:
+
 1.  It points the nodes to the new custom `osImageURL`.
 2.  It creates a configuration file at `/etc/tmpfiles.d/rsyslog.conf`. This file instructs `systemd-tmpfiles` to create the `/var/lib/rsyslog` directory on boot, which is required for `rsyslog` to function correctly.
 
@@ -14,7 +15,7 @@ This `MachineConfig` does two things:
 [source,bash,role=execute]
 ----
 # An example of a custom image.
-# Use it if you cannot finish the last part.
+# Use it if you cannot finish the previous part.
 # CUSTOM_IMAGE="quay.io/wangzheng422/qimgs:rhcos-4.18-rsyslog-2025.10.17-v01"
 
 tee machine-config-rsyslog.yaml << EOF
@@ -80,4 +81,4 @@ EOF
 oc apply -f machine-config-rsyslog.yaml
 ----
 
-After applying the `MachineConfig`, the Machine Config Operator (MCO) will detect the change and begin a rolling update of the `master` nodes to apply the new configuration and boot from the custom OS image.
+After applying the `MachineConfig`, the Machine Config Operator (MCO) will detect the change and begin a rolling update of the `master` nodes to apply the new configuration and reboot from the custom OS image.

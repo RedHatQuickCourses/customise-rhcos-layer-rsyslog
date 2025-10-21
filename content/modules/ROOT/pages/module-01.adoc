@@ -59,9 +59,6 @@ RUN --mount=type=bind,source=./,target=/wzh/ \
       dnf clean all && \
       ostree container commit
 
-# Optional: Add custom configurations
-# For example, to add a custom rsyslog configuration file:
-# ADD remote.conf /etc/rsyslog.d/remote.conf
 EOF
 ----
 
